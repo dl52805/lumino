@@ -1,0 +1,29 @@
+{
+    values = {
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++",
+        {
+            "-target",
+            "arm64-apple-macos15.7",
+            "-isysroot",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.1.sdk",
+            "-lz",
+            "-Llib/raylib/src",
+            "-Wl,-x",
+            "-Wl,-dead_strip",
+            "-lraylib",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "OpenGL",
+            "-framework",
+            "Cocoa",
+            "-framework",
+            "IOKit",
+            "-framework",
+            "CoreAudio"
+        }
+    },
+    files = {
+        "build/.objs/lumino/macosx/arm64/release/src/main.cpp.o"
+    }
+}
