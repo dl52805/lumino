@@ -8,6 +8,8 @@ add_rules(
 
 add_rules("mode.debug", "mode.release")
 
+set_defaultmode("debug")
+
 target("lumino")
   set_kind("binary")
   add_files("src/*.cpp")
@@ -35,3 +37,22 @@ target("lumino")
     })
   end
 
+  on_run(
+    function (target)
+      import("core.base.process")
+
+      local stdout = "image.ppm"
+      local proc = process.openv(
+        target:targetfile(),
+        {}, { stdout = stdout }
+      )
+      if proc then
+        proc:wait()
+        proc:close()
+      end
+
+      if is_plat("macosx") then
+        os.exec("magick image.ppm image.png")
+      end
+    end
+  )

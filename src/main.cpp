@@ -1,80 +1,92 @@
+#include <math.h>
+
 #include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
-#include <stdio.h>
+#include "vec3.hpp"
+#include "ray.hpp"
+#include "color.hpp"
 
-#include <raylib.h>
-
-constexpr int width  = 800;
-constexpr int height = 800;
-
-int main(int argc, char **argv)
+double hit_sphere(const Point3& center, double radius, const Ray& r)
 {
-  SetConfigFlags(FLAG_WINDOW_HIGHDPI);
+  // (C - Q), center - ray_origin
+  Vec3 oc = center - r.origin();
+  double a = dot(r.direction(), r.direction());
+  double b = - 2.0 * dot(r.direction(), oc);
+  double c = dot(oc, oc) - radius * radius;
+  double discriminant = b * b - 4 * a * c;
 
-  InitWindow(width, height, "raylib");
-
-  Camera3D camera = {0};
-  camera.position = Vector3 {
-    80.0f, 80.0f, 80.0f,
-  };
-  camera.target = Vector3 {
-    0.0f, 12.0f, 0.0f,
-  };
-  camera.up = Vector3 {
-    0.0f, 1.0f, 0.0f,
-  };
-  camera.fovy = 45.0f;
-  camera.projection = CAMERA_PERSPECTIVE;
-
-  Model model = LoadModel("resources/castle.obj");
-  Texture2D texture = LoadTexture("resources/castle_diffuse.png");
-  model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-
-  Vector3 model_position = {
-    0.0f, 0.0f, 0.0f,
-  };
-
-  BoundingBox bounds = GetMeshBoundingBox(model.meshes[0]);
-
-  int triangle_count = model.meshes[0].vertexCount / 3;
-  Vector3 *model_vertices = (Vector3 *) model.meshes[0].vertices;
-  for(int i = 0; i < triangle_count; i++)
+  if (discriminant < 0)
   {
-    Vector3 a, b, c;
-    if (model.meshes[0].indices != nullptr)
-    {
-      int idx_a = model.meshes[0].indices[i * 3 + 0];
-      int idx_b = model.meshes[0].indices[i * 3 + 1];
-      int idx_c = model.meshes[0].indices[i * 3 + 2];
-
-      a = model_vertices[idx_a];
-      b = model_vertices[idx_b];
-      c = model_vertices[idx_c];
-    }
-    else
-    {
-      a = model_vertices[i * 3 + 0];
-      b = model_vertices[i * 3 + 1];
-      c = model_vertices[i * 3 + 2];
-    }
+    return - 1.0;
   }
-
-  SetTargetFPS(60);
-
-  while (!WindowShouldClose())
+  else
   {
-    BeginDrawing();
-      ClearBackground(RAYWHITE);
-
-      BeginMode3D(camera);
-        DrawModel(model, model_position, 1.0f, WHITE);
-        DrawGrid(20, 10.0f);
-      EndMode3D();
-    EndDrawing();
+    return (- b - sqrt(discriminant)) / (2.0 * a);
   }
-
-  CloseWindow();
-
-  return 0;
 }
+
+Color ray_color(const Ray& r)
+{
+  auto t = hit_sphere(Point3(0, 0, -1), 0.5, r);
+  if (t > 0.0)
+  {
+    Vec3 normal = unit_vector(r.at(t) - Vec3(0, 0, - 1));
+    return 0.5 * Color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
+  }
+
+  Vec3 unit_direction = unit_vector(r.direction());
+  double a = 0.5 * (unit_direction.y() + 1.0);
+  return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * Color(0.5, 0.7, 1.0);
+}
+
+int main(int argc, char *argv[])
+{
+  double aspect_ratio = 16.0 / 9.0;
+  size_t image_width  = 400;
+
+  size_t image_height = int(image_width / aspect_ratio);
+  image_height = (image_height < 1) ? 1 : image_height;
+
+  // Camera
+
+  double focal_len = 1.0;
+  double viewport_height = 2.0;
+  double viewport_width = viewport_height
+    * (double(image_width) / image_height);
+  Point3 camera_center = Point3(0, 0, 0);
+
+  Vec3 viewport_u = Vec3(viewport_width, 0, 0);
+  Vec3 viewport_v = Vec3(0, - viewport_height, 0);
+
+  Vec3 pixel_delta_u = viewport_u / image_width;
+  Vec3 pixel_delta_v = viewport_v / image_height;
+
+  Vec3 viewport_upper_left = camera_center - Vec3(0, 0, focal_len)
+    - viewport_u / 2 - viewport_v / 2;
+  Vec3 pixel_origin_loc = viewport_upper_left
+    + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+  fmt::print("P3\n{} {}\n255\n", image_width, image_height);
+
+  for (int j = 0; j < image_height; j++)
+  {
+    fmt::print(stderr, "\rScanlines remaining: {} ", image_height - j);
+
+    for (int i = 0; i < image_width; i++)
+    {
+      Vec3 pixel_center = pixel_origin_loc + (i * pixel_delta_u)
+        + (j * pixel_delta_v);
+      Vec3 ray_dir = pixel_center - camera_center;
+      Ray ray(camera_center, ray_dir);
+
+      Color pixel_color = ray_color(ray);
+      write_color(std::cout, pixel_color);
+    }
+  }
+
+  fmt::print(stderr, "\rDone                                       \n");
+}
+
 
