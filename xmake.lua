@@ -58,6 +58,6 @@ target("lumino")
         proc:close()
       end
 
-      os.exec("magic image.ppm image.png")
+      os.exec("magick image.ppm image.png")
     end
   )
