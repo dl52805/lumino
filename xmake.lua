@@ -58,8 +58,6 @@ target("lumino")
         proc:close()
       end
 
-      if is_plat("macosx") then
-        os.exec("magick image.ppm image.png")
-      end
+      os.exec("magic image.ppm image.png")
     end
   )
