@@ -10,11 +10,17 @@ add_rules("mode.debug", "mode.release")
 
 set_defaultmode("debug")
 
+add_requires("raylib", "fmt")
+
 target("lumino")
   set_kind("binary")
   add_files("src/*.cpp")
   set_rundir("$(projectdir)")
 
+  add_packages("raylib")
+  add_packages("fmt")
+
+  --[[
   add_includedirs("./lib/raylib/src")
   add_linkdirs("./lib/raylib/src")
   add_links("raylib")
@@ -36,6 +42,7 @@ target("lumino")
       "User32"
     })
   end
+  --]]
 
   on_run(
     function (target)
