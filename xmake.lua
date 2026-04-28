@@ -10,7 +10,7 @@ add_rules("mode.debug", "mode.release")
 
 set_defaultmode("debug")
 
-add_requires("raylib", "fmt")
+add_requires("raylib", "fmt", "tinyobjloader")
 
 target("lumino")
   set_kind("binary")
@@ -19,6 +19,7 @@ target("lumino")
 
   add_packages("raylib")
   add_packages("fmt")
+  add_packages("tinyobjloader")
 
   --[[
   add_includedirs("./lib/raylib/src")
