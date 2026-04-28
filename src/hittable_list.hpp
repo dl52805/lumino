@@ -15,21 +15,25 @@ struct Hittable_List : public Hittable
   Hittable_List() {}
   Hittable_List(shared_ptr<Hittable> object) { add(object); }
 
+  void clear()
+  {
+    objects.clear();
+  }
+
   void add(shared_ptr<Hittable> object)
   {
     objects.push_back(object);
   }
 
-  bool hit(const Ray& r, double ray_tmin,
-    double ray_tmax, Hit_Record& rec) const override
+  bool hit(const Ray& r, Interval ray_t, Hit_Record& rec) const override
   {
     Hit_Record temp_rec;
     bool hit_anything = false;
-    double closest_so_far = ray_tmax;
+    double closest_so_far = ray_t.max;
 
     for (int i = 0; i < objects.size(); i++)
     {
-      if (objects[i]->hit(r, ray_tmin, closest_so_far, temp_rec))
+      if (objects[i]->hit(r, Interval(ray_t.min, closest_so_far), temp_rec))
       {
         hit_anything = true;
         closest_so_far = temp_rec.t;

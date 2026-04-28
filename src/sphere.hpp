@@ -11,7 +11,7 @@ struct Sphere : public Hittable
   Sphere(const Point3& center, double radius)
     : center(center), radius(std::fmax(0, radius)) {}
 
-  bool hit(const Ray& r, double ray_tmin, double ray_tmax, Hit_Record& rec)
+  bool hit(const Ray& r, Interval ray_t, Hit_Record& rec)
     const override
   {
     Vec3 oc = center - r.origin();
@@ -25,15 +25,16 @@ struct Sphere : public Hittable
     double sqrtd = sqrt(discriminant);
 
     double root = (h - sqrtd) / a;
-    if ((root <= ray_tmin) || (ray_tmax <= root))
+    if (!ray_t.surrounds(root))
     {
       root = (h + sqrtd) / a;
-      if ((root <= ray_tmin) || (ray_tmax <= root)) return false;
+      if (!ray_t.surrounds(root)) return false;
     }
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.normal = (rec.p - center) / radius;
+    Vec3 outward_normal = (rec.p - center) / radius;
+    rec.set_face_normal(r, outward_normal);
 
     return true;
   }

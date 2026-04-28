@@ -2,6 +2,8 @@
 
 #include "ray.hpp"
 
+#include "interval.hpp"
+
 struct Hit_Record
 {
   Point3 p;
@@ -19,8 +21,7 @@ struct Hit_Record
 struct Hittable
 {
   virtual ~Hittable() = default;
-  virtual bool hit(const Ray& r, double ray_tmin,
-    double ray_tmax, Hit_Record& rec) const = 0;
+  virtual bool hit(const Ray& r, Interval ray_t, Hit_Record& rec) const = 0;
 };
 
 
