@@ -24,7 +24,7 @@
 Color ray_color(const Ray& r, const Hittable& world)
 {
   Hit_Record rec;
-  if (world.hit(r, Interval(0, infinity), rec))
+  if (world.hit(r, Interval(0.001, infinity), rec))
   {
     return 0.5 * (unit_vector(rec.normal) + Color(1, 1, 1));
   }
@@ -36,7 +36,7 @@ Color ray_color(const Ray& r, const Hittable& world)
 
 int main(int argc, char *argv[])
 {
-  std::string obj_file = "./assets/diamond.obj";
+  std::string obj_file = "./assets/test diamond.obj";
   tinyobj::ObjReaderConfig reader_config;
   reader_config.triangulate = true;
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   std::vector<Triangle> triangles;
   Hittable_List world;
 
-  constexpr double scale_factor = 0.05;
+  constexpr double scale_factor = 1.0;
 
   std::vector<Point3> temp_parsed_vertices;
   for (size_t s = 0; s < shapes.size(); s++)
@@ -79,14 +79,11 @@ int main(int argc, char *argv[])
         // access to vertex
         tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
         tinyobj::real_t vx =
-          attrib.vertices[3 * size_t(idx.vertex_index) + 0]
-            * scale_factor;
+          attrib.vertices[3 * size_t(idx.vertex_index) + 0];
         tinyobj::real_t vy =
-          attrib.vertices[3 * size_t(idx.vertex_index) + 1]
-            * scale_factor - 0.4;
+          attrib.vertices[3 * size_t(idx.vertex_index) + 1];
         tinyobj::real_t vz =
-          attrib.vertices[3 * size_t(idx.vertex_index) + 2]
-            * scale_factor - 1.0;
+          attrib.vertices[3 * size_t(idx.vertex_index) + 2];
 
         temp_parsed_vertices.push_back(Point3(vx, vy, vz));
 
@@ -130,18 +127,18 @@ int main(int argc, char *argv[])
   }
 
   double aspect_ratio = 16.0 / 9.0;
-  size_t image_width  = 400;
+  size_t image_width  = 600;
 
   size_t image_height = int(image_width / aspect_ratio);
   image_height = (image_height < 1) ? 1 : image_height;
 
   // camera
 
-  double focal_len = 1.0;
+  double focal_len = 1.5;
   double viewport_height = 2.0;
   double viewport_width = viewport_height
     * (double(image_width) / image_height);
-  Point3 camera_center = Point3(0, 0, 0);
+  Point3 camera_center = Point3(0, 1, 3.5);
 
   Vec3 viewport_u = Vec3(viewport_width, 0, 0);
   Vec3 viewport_v = Vec3(0, - viewport_height, 0);
