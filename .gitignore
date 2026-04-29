@@ -3,3 +3,4 @@
 compile_commands.json
 build/
 .session
+**/.DS_Store
