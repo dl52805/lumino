@@ -3,60 +3,52 @@
 #include "vec3.hpp"
 #include <limits>
 
-struct Triangle
+#include "hittable.hpp"
+
+struct Triangle : public Hittable
 {
   Point3 a, b, c;
 
   Triangle(Point3 a, Point3 b, Point3 c) : a(a), b(b), c(c) {}
 
-  bool ray_intersects_triangle( const Point3 &ray_origin,
-    const Point3 &ray_vector)
+  bool hit(const Ray& r, Interval ray_t, Hit_Record& rec) const override
   {
     constexpr float epsilon = std::numeric_limits<float>::epsilon();
 
-    Point3 edge1 = b - a;
-    Point3 edge2 = c - a;
+    Vec3 edge1 = b - a;
+    Vec3 edge2 = c - a;
 
-    // Backface culling, assuming CCW-wound triangles.
-    const Point3 normal = cross(edge1, edge2); // No need to normalize
-    if (dot(normal, ray_vector) > 0) {
-      return false;
-    }
+    // backface culling, assuming CCW-wound triangles.
+    const Vec3 normal = cross(edge1, edge2); // no need to normalize
+    if (dot(normal, r.direction()) > 0) return false;
 
-    Point3 ray_cross_e2 = cross(ray_vector, edge2);
+    Vec3 ray_cross_e2 = cross(r.direction(), edge2);
     float det = dot(edge1, ray_cross_e2);
 
-    if (abs(det) < epsilon) {
-      return false; // Ray is parallel to triangle
-    }
+    if (abs(det) < epsilon) return false; // ray is parallel to triangle
 
     float inv_det = 1.0 / det;
-    Point3 s = ray_origin - a;
+    Point3 s = r.origin() - a;
     float u = inv_det * dot(s, ray_cross_e2);
-    // Ray passes outside edge2's bounds
-    if (u < -epsilon || u - 1 > epsilon) {
-      return false;
-    }
+    // ray passes outside edge2's bounds
+    if (u < - epsilon || u - 1 > epsilon) return false;
 
-    Point3 s_cross_e1 = cross(s, edge1);
-    float v = inv_det * dot(ray_vector, s_cross_e1);
+    Vec3 s_cross_e1 = cross(s, edge1);
+    float v = inv_det * dot(r.direction(), s_cross_e1);
 
-    // Ray passes outside edge1's bounds
-    if (v < -epsilon || u + v - 1 > epsilon) {
-      return false;
-    }
+    // ray passes outside edge1's bounds
+    if (v < - epsilon || u + v - 1 > epsilon) return false;
 
-    // The ray line intersects with the triangle.
-    // We compute t to find where on the ray the intersection is.
+    // the ray line intersects with the triangle
+    // we compute t to find where on the ray the intersection is
     float t = inv_det * dot(edge2, s_cross_e1);
 
-    if (t > epsilon) // Ray intersection
-    {
-      return  true;
-    }
-    else {
-      return false;
-    }
+    rec.normal = normal;
+    rec.set_face_normal(r, normal);
+    rec.t = t;
+
+    return t > epsilon; // ray intersection
   }
 };
+
 
