@@ -5,6 +5,8 @@
 
 #include "hittable.hpp"
 
+#include <omp.h>
+
 using std::make_shared;
 using std::shared_ptr;
 
