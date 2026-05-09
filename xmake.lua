@@ -12,6 +12,11 @@ set_defaultmode("debug")
 
 add_requires("raylib", "fmt", "tinyobjloader")
 
+target("GUI")
+  set_kind("binary")
+  add_files("src/UI_tool/*.cpp")
+  add_packages("raylib");
+
 target("lumino")
   set_kind("binary")
   add_files("src/*.cpp")
