@@ -1,15 +1,21 @@
 #pragma once
 
 #include "vec3.hpp"
-#include <limits>
 
 #include "hittable.hpp"
 
 struct Triangle : public Hittable
 {
   Point3 a, b, c;
+  Vec3 normal;
+  std::shared_ptr<Material> mat;
 
-  Triangle(Point3 a, Point3 b, Point3 c) : a(a), b(b), c(c) {}
+  Triangle(Point3 a, Point3 b, Point3 c, std::shared_ptr<Material> mat)
+    : a(a), b(b), c(c), mat(mat) {
+    Vec3 edge1 = b - a;
+    Vec3 edge2 = c - a;
+    normal = unit_vector(cross(edge1, edge2));
+  }
 
   bool hit(const Ray& r, Interval ray_t, Hit_Record& rec) const override
   {
@@ -20,7 +26,7 @@ struct Triangle : public Hittable
 
     // backface culling, assuming CCW-wound triangles.
     const Vec3 normal = cross(edge1, edge2); // no need to normalize
-    //if (dot(normal, r.direction()) > 0) return false;
+    if (dot(normal, r.direction()) > 0) return false;
 
     Vec3 ray_cross_e2 = cross(r.direction(), edge2);
     float det = dot(edge1, ray_cross_e2);
@@ -47,10 +53,11 @@ struct Triangle : public Hittable
       return false;
     }
 
-    //rec.normal = normal;
+    rec.normal = unit_vector(normal);
     rec.t = t;
     rec.p = r.at(t);
     rec.set_face_normal(r, unit_vector(normal));
+    rec.mat = mat;
 
     return true; // ray intersection
   }

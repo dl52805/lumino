@@ -1,3 +1,4 @@
+#include <memory>
 #define TINYOBJLOADER_IMPLEMENTATION 
 #include "tiny_obj_loader.h"
 
@@ -8,35 +9,27 @@
 #include <fmt/ostream.h>
 
 #include "vec3.hpp"
-#include "ray.hpp"
-#include "color.hpp"
-
-#include "hittable.hpp"
 #include "hittable_list.hpp"
-#include "sphere.hpp"
 
 #include "commons.hpp"
 
-#include "interval.hpp"
-
 #include "triangle.hpp"
-
-Color ray_color(const Ray& r, const Hittable& world)
-{
-  Hit_Record rec;
-  if (world.hit(r, Interval(0.001, infinity), rec))
-  {
-    return 0.5 * (unit_vector(rec.normal) + Color(1, 1, 1));
-  }
-
-  Vec3 unit_direction = unit_vector(r.direction());
-  double a = 0.5 * (unit_direction.y() + 1.0);
-  return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * Color(0.5, 0.7, 1.0);
-}
+#include "camera.hpp"
+#include "sphere.hpp"
+#include "material.hpp"
 
 int main(int argc, char *argv[])
 {
-  std::string obj_file = "./assets/test diamond.obj";
+  std::shared_ptr<Lambertian> material_ground
+    = std::make_shared<Lambertian>(
+      Color(0.5, 0.5, 0.5));
+  std::shared_ptr<Metal> material_diamond
+    = std::make_shared<Metal>(Color(0.5194, 0.7804, 0.8157), 0.0);
+  std::shared_ptr<Lambertian> material_sphere
+    = std::make_shared<Lambertian>(
+      Color(0.5294, 0.7804, 0.8157));
+
+  std::string obj_file = "./assets/diamond_cut.obj";
   tinyobj::ObjReaderConfig reader_config;
   reader_config.triangulate = true;
 
@@ -62,8 +55,6 @@ int main(int argc, char *argv[])
 
   std::vector<Triangle> triangles;
   Hittable_List world;
-
-  constexpr double scale_factor = 1.0;
 
   std::vector<Point3> temp_parsed_vertices;
   for (size_t s = 0; s < shapes.size(); s++)
@@ -117,7 +108,8 @@ int main(int argc, char *argv[])
         Triangle(
           temp_parsed_vertices.at(0),
           temp_parsed_vertices.at(1),
-          temp_parsed_vertices.at(2)
+          temp_parsed_vertices.at(2),
+          material_diamond
         )
       );
       temp_parsed_vertices.clear();
@@ -126,48 +118,26 @@ int main(int argc, char *argv[])
     }
   }
 
-  double aspect_ratio = 16.0 / 9.0;
-  size_t image_width  = 600;
-
-  size_t image_height = int(image_width / aspect_ratio);
-  image_height = (image_height < 1) ? 1 : image_height;
+  // world.add(make_shared<Sphere>(Point3(0, 0, - 1), 1.5, material_diamond));
+  world.add(make_shared<Sphere>(
+    Point3(2, 1.05, 2), 1, material_sphere));
+  world.add(make_shared<Sphere>(
+    Point3(0, - 100.5, - 1), 100, material_ground));
 
   // camera
 
-  double focal_len = 1.5;
-  double viewport_height = 2.0;
-  double viewport_width = viewport_height
-    * (double(image_width) / image_height);
-  Point3 camera_center = Point3(0, 1, 3.5);
+  Camera cam;
 
-  Vec3 viewport_u = Vec3(viewport_width, 0, 0);
-  Vec3 viewport_v = Vec3(0, - viewport_height, 0);
+  cam.aspect_ratio = 16.0 / 9.0;
+  cam.image_width = 1200;
+  cam.samples_per_pixel = 50;
+  cam.max_depth = 35;
 
-  Vec3 pixel_delta_u = viewport_u / image_width;
-  Vec3 pixel_delta_v = viewport_v / image_height;
+  cam.vfov = 90;
+  cam.look_from = Point3(2, 1, - 3);
+  cam.look_at = Point3(0, 0, - 0.2);
+  cam.v_up = Point3(0, 1, 0);
 
-  Vec3 viewport_upper_left = camera_center - Vec3(0, 0, focal_len)
-    - viewport_u / 2 - viewport_v / 2;
-  Vec3 pixel_origin_loc = viewport_upper_left
-    + 0.5 * (pixel_delta_u + pixel_delta_v);
-
-  fmt::print("P3\n{} {}\n255\n", image_width, image_height);
-
-  for (int j = 0; j < image_height; j++)
-  {
-    fmt::print(stderr, "\rScanlines remaining: {} ", image_height - j);
-
-    for (int i = 0; i < image_width; i++)
-    {
-      Vec3 pixel_center = pixel_origin_loc + (i * pixel_delta_u)
-        + (j * pixel_delta_v);
-      Vec3 ray_dir = pixel_center - camera_center;
-      Ray ray(camera_center, ray_dir);
-
-      Color pixel_color = ray_color(ray, world);
-      write_color(std::cout, pixel_color);
-    }
-  }
-
-  fmt::print(stderr, "\rDone                                       \n");
+  cam.render(world);
 }
+
